@@ -62,19 +62,22 @@ app.get('/getUsers',(req,res)=>{
 })
 
 //working
-app.get('/getParticularMeet',(req,res)=>{
+app.get('/meet/:meetid',(req,res)=>{
+  const meetId=req.params.meetid;
   const data = {
     query: 'query Transcript($transcriptId: String!) { transcript(id: $transcriptId) { title id } }',
-    variables: { transcriptId: 'WoZxrvg7psxur6Fw' }
+    variables: { transcriptId: meetId }
   };
   
   axios
     .post(url, data, { headers: headers })
     .then(response => {
       console.log(response.data);
+      res.json(response.data);
     })
     .catch(error => {
       console.error('Error:', error);
+      res.json(response.data);
     });  
 })
 
@@ -164,7 +167,8 @@ app.get('/getMeets2', (req, res) => {
     });
 });
 
-app.get("/delete",(req,res)=>{
+app.get("/delete/:deleteId",(req,res)=>{
+  const deleteId=req.params.deleteId;
   const data = {
     query: `
         mutation($transcriptId: String!) {
@@ -176,16 +180,18 @@ app.get("/delete",(req,res)=>{
           }
         }
       `,
-    variables: { transcriptId: 'WoZxrvg7psxur6Fw' }
+    variables: { transcriptId: deleteId}
   };
   
   axios
     .post(url, data, { headers: headers })
     .then(result => {
       console.log(result.data);
+      res.send("deleted successfully");
     })
     .catch(e => {
       console.log(JSON.stringify(e));
+      res.send("unable to delete");
     });
   
   
@@ -231,15 +237,16 @@ app.get("/upload",(req,res)=>{
     });
 })
 
-app.get("/addLive",(req,res)=>{
+app.get("/addLive/:meetLink",(req,res)=>{
+  const meetLink=req.params.meetLink;
   const data = {
-    query: `  mutation AddToLiveMeeting($meetingLink: String!) {
+    query: `mutation AddToLiveMeeting($meetingLink: String!) {
           addToLiveMeeting(meeting_link: $meetingLink) {
             success
           }
         }
       `,
-    variables: { meetingLink: 'https://meet.google.com/xov-dqie-poi' }
+    variables: { meetingLink: meetLink}
   };
   
   axios
@@ -254,14 +261,13 @@ app.get("/addLive",(req,res)=>{
 // Endpoint to handle incoming webhook notifications
 app.post('/webhook', (req, res) => {
   const payload = req.body; // The payload sent by Fireflies.ai
-
+  console.log("inside the payload part");
   // Log the received payload
   console.log('Received payload:', payload);
-
+  console.log("id",payload.clientReferenceId);
   // Example: Check the event type and handle the event
   if (payload.event === 'transcript_ready') {
     const transcript = payload.transcript; // Extract transcript data
-    
     // Example: Update database with the new transcript
     updateDatabase(transcript);
 
@@ -272,30 +278,6 @@ app.post('/webhook', (req, res) => {
     res.status(400).send('Unexpected webhook event');
   }
 });
-
-
-// app.get("/addMeet/:id",(req,res)=>{
-    
-//     const data = {
-//         query: `  mutation AddToLiveMeeting($meetingLink: String!) {
-//                       addToLiveMeeting(meeting_link: $meetingLink) {
-//                           success
-//                       }
-//                   }
-//           `,
-//         variables: { meetingLink:{id} }
-
-//       };
-      
-//       axios
-//         .post(url, data, { headers: headers })
-//         .then(result => {
-//           console.log(result.data);
-//         })
-//         .catch(e => {
-//           console.log(JSON.stringify(e));
-//         });
-// })
 
   app.listen(3000,()=>{
     console.log("server at port 3000");
